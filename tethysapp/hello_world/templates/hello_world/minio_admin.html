@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>MinIO Object Browser</title>
+	{% load static %}
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap">
+	<link rel="stylesheet" href="{% static 'hello_world/css/main.css' %}">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+	<div class="d-flex minio-admin-wrapper" style="height:100vh;">
+		<!-- Sidebar -->
+		<aside class="minio-sidebar minio-gradient-bg d-flex flex-column p-0">
+			<div class="sidebar-header d-flex align-items-center gap-2 px-3 pt-3 pb-2">
+				<img src="{% static 'hello_world/images/icon.gif' %}" alt="MinIO" width="38" height="38" class="rounded-2">
+				<div class="d-flex flex-column lh-sm">
+					<span class="sidebar-title fw-bold text-white" style="font-size:1.18em;letter-spacing:1px;">OBJECT STORE</span>
+					<span class="text-white-50" style="font-size:0.85em;">Community Edition</span>
+				</div>
+			</div>
+			<button id="create-bucket-btn" class="btn btn-primary w-100 rounded-3 fw-semibold my-3 mx-3 d-flex align-items-center justify-content-center gap-2">
+				<i class="fa fa-plus"></i> Create Bucket
+			</button>
+			<div class="sidebar-search px-3">
+				<input type="text" id="bucket-search" class="form-control rounded-3" placeholder="Filter Buckets">
+			</div>
+			<div class="mt-3">
+				<div class="buckets-label-wrap px-4 pt-1 pb-0">
+					<span class="buckets-label">Buckets</span>
+					<div class="buckets-underline"></div>
+				</div>
+				<ul id="bucket-list" class="bucket-list list-unstyled mt-2 mb-0">
+					<!-- Danh sách bucket sẽ được render ở đây bằng JS -->
+				</ul>
+			</div>
+		</aside>
+
+		<!-- Main Content -->
+		<main class="minio-main-content flex-grow-1 d-flex flex-column bg-light">
+			<!-- Header -->
+			<header class="bg-white shadow-sm d-flex align-items-center justify-content-between px-4 py-3">
+				<span class="fs-4 fw-bold text-dark">Object Browser</span>
+				<div class="d-flex align-items-center gap-3">
+								<input type="text" id="object-search" class="form-control rounded-3" style="min-width:320px;" placeholder="Start typing to filter objects in the bucket">
+								<button id="refresh-btn" class="btn btn-outline-primary rounded-3" title="Refresh"><i class="fa fa-sync-alt"></i></button>
+								<div class="dropdown">
+									<button id="upload-btn" class="btn btn-primary rounded-3 d-flex align-items-center gap-2" data-bs-toggle="dropdown" aria-expanded="false">
+										<span>Upload</span> <i class="fa fa-upload"></i>
+									</button>
+									<ul class="dropdown-menu shadow" aria-labelledby="upload-btn" style="min-width:170px;">
+										<li><a class="dropdown-item" href="#" id="upload-file-menu"><i class="fa fa-upload me-2"></i>Upload File</a></li>
+										<li><a class="dropdown-item" href="#" id="upload-folder-menu"><i class="fa fa-folder-open me-2"></i>Upload Folder...</a></li>
+									</ul>
+								</div>
+				</div>
+			</header>
+
+			<!-- Bucket Info -->
+			<section class="bucket-info px-4 pt-3 pb-1 fw-semibold text-primary" id="bucket-info" style="font-size:1.1em;">
+				<!-- Thông tin bucket sẽ được render ở đây bằng JS -->
+			</section>
+
+			<!-- Object Table -->
+			<section class="object-table-section flex-grow-1 px-4 pb-4">
+				<div class="table-responsive rounded-3 shadow-sm bg-white">
+					<table class="object-table table align-middle mb-0" id="object-table">
+						<thead class="table-light">
+							<tr>
+								<th style="width:40px;"><input type="checkbox" id="select-all"></th>
+								<th>Name</th>
+								<th>Last Modified</th>
+								<th>Size</th>
+							</tr>
+						</thead>
+						<tbody>
+							<!-- Danh sách file/object sẽ được render ở đây bằng JS -->
+						</tbody>
+					</table>
+				</div>
+			</section>
+		</main>
+	</div>
+
+	<!-- Popup: Create Bucket -->
+	<div id="create-bucket-popup" class="modal fade" tabindex="-1">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content rounded-4 minio-modal-content">
+				<div class="modal-header border-0">
+					<h5 class="modal-title fw-bold minio-modal-title">Create Bucket</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="cancel-create-bucket"></button>
+				</div>
+				<form id="create-bucket-form" class="modal-body minio-modal-body">
+					<div class="row mb-2 align-items-center">
+						<label for="new-bucket-name" class="col-3 col-form-label fw-semibold minio-label text-end">Bucket Name<span class="text-danger">*</span></label>
+						<div class="col-9">
+							<input type="text" id="new-bucket-name" class="form-control minio-input" placeholder="Bucket Name" required autocomplete="off">
+							<div id="create-bucket-error" class="text-danger small mt-1" style="display:none;"></div>
+						</div>
+					</div>
+					<div class="d-flex gap-2 justify-content-end mt-4">
+						<button type="button" class="btn btn-outline-secondary minio-btn-clear" id="clear-create-bucket">Clear</button>
+						<button type="submit" class="btn minio-btn-create" id="submit-create-bucket"><i class="fa fa-plus"></i> Create Bucket</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- Popup: Upload Object -->
+	<div id="upload-popup" class="modal fade" tabindex="-1">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content rounded-4">
+				<div class="modal-header border-0">
+					<h5 class="modal-title fw-bold text-primary">Upload Object</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="cancel-upload"></button>
+				</div>
+				<form id="upload-form" class="modal-body" enctype="multipart/form-data">
+								  <input type="file" id="upload-file" name="file" class="form-control mb-3" required style="display:none;">
+								  <input type="file" id="upload-folder" name="folder" class="form-control mb-3" style="display:none;" webkitdirectory directory multiple>
+								<div id="upload-error" class="text-danger small mb-2" style="display:none;"></div>
+								<div class="d-flex gap-2 justify-content-end">
+									<button type="submit" class="btn btn-primary"><i class="fa fa-upload"></i> Upload</button>
+								</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="{% static 'hello_world/js/main.js' %}"></script>
+</body>
+</html>
